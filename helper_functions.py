@@ -89,6 +89,15 @@ def run_simulations(n, init_state, model, m, n_, bf, delay_ads, T, exp_name, fig
     return paths
 
 
+def run_simulations_no_plots(n, init_state, model, m, n_, bf, delay_ads, T):
+    paths = np.zeros(n)
+    # run n simulations
+    for i in range(n):
+        Ts, states, infection = simulate(init_state, model, m, n_, bf, delay_ads, T)
+        paths[i]= states["bacteria"][-1]
+
+    return paths
+
 def get_statistics(infection, states):
     """ return some general statistics"""
     # check type case
