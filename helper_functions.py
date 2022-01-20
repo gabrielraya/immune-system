@@ -119,3 +119,60 @@ def get_statistics(infection, states):
     print("Bacteria killed by macrophage: ", infection.bacteria_killed_by_macrophage)
     print("Bacteria killed by dendritic: ", infection.bacteria_killed_by_dendritic)
     print("Number ot times AIS was called: ", len(infection.AIS_ts))
+    
+    
+def simulate_n(n, init_state, model, m, n_, bf, delay_ads, T=100): 
+    """
+    Run n simulations 
+    
+    returns dictionary of array of 2
+    """
+    bacteria_states = []
+    macrophage_states = [] 
+    dendritic_states = []
+    t_cell_states = []
+    b_cell_states = []
+    bacteria_killed_by_macrophage = []
+    bacteria_killed_by_dendritic = []
+    adaptive_is_times = []
+    
+    for  i in range(n):
+        Ts, states, infection = simulate(init_state, model, m, n_, bf, delay_ads, T) 
+        # append paths
+        bacteria_states.append(states['bacteria'])
+        macrophage_states.append(states['macrophage'])
+        dendritic_states.append(states['dendritic'])
+        t_cell_states.append(states['t_cell'])
+        b_cell_states.append(states['b_cell'])
+        bacteria_killed_by_macrophage.append(infection.bacteria_killed_by_macrophage)
+        bacteria_killed_by_dendritic.append(infection.bacteria_killed_by_dendritic)
+        adaptive_is_times.append(len(infection.AIS_ts))
+
+
+    states = { "bacteria": np.stack(bacteria_states),
+                "macrophage": np.stack(macrophage_states),
+                "dendritic": np.stack(dendritic_states),
+                "t_cell" : np.stack(t_cell_states),
+                "b_cell" : np.stack(b_cell_states),
+                "bacteria_killed_by_macrophage" : np.array(bacteria_killed_by_macrophage),
+                "bacteria_killed_by_dendritic": np.array(bacteria_killed_by_dendritic),
+                "adaptive_is_times": np.array(adaptive_is_times)
+           }
+    
+    return Ts, states
+
+
+def get_mean_stats(states): 
+    """ Compute several statistics over the mean of the simulation pahts"""
+    print("Max number of bacteria at some point :", states['bacteria'].max(axis=1).mean(axis=0), "\tStd:", states['bacteria'].max(axis=1).std())
+    print("Max number of macrophage at some point :", states['macrophage'].max(axis=1).mean(axis=0), "\tStd:", states['macrophage'].max(axis=1).std())
+    print("Max number of dendritic at some point :", states['dendritic'].max(axis=1).mean(axis=0), "\tStd:", states['dendritic'].max(axis=1).std())
+    print("Max number of t_cell at some point :",states['t_cell'].max(axis=1).mean(axis=0), "\tStd:", states['t_cell'].max(axis=1).std())
+    print("Max number of b_cell at some point :",states['b_cell'].max(axis=1).mean(axis=0), "\tStd:", states['b_cell'].max(axis=1).std())
+    # ratio between bacteria and macrophage, we take the mean 
+    ratio = (states['bacteria'].mean(axis=0)/states['macrophage'].mean(axis=0))
+    t = np.where(ratio == ratio.max())[0][0]
+    print("Max ratio bacteria/macrophage {} at t={} no. bacteria {} no. macrophage {}".format(ratio.max(), t, states['bacteria'].mean(axis=0)[t], states['macrophage'].mean(axis=0)[t]))
+    print("Bacteria killed by macrophage: ", states['bacteria_killed_by_macrophage'].mean(axis=0),"\tStd:", states['bacteria_killed_by_macrophage'].std())
+    print("Bacteria killed by dendritic: ", states['bacteria_killed_by_dendritic'].mean(axis=0),"\tStd:", states['bacteria_killed_by_dendritic'].std())
+    print("Number ot times AIS was called: ", states['adaptive_is_times'].mean(axis=0),"\tStd:", states['adaptive_is_times'].std())
